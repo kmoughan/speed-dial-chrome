@@ -5,6 +5,16 @@ body {
 	margin: 0;
 }
 
+#backbtn {
+	display: block;
+    text-decoration: none;
+    background: #222;
+    width: 240px;
+    color: #f3f3f3;
+    padding: 12px;
+    margin: 12px auto;
+}
+
 #content {
 	text-align: center;
 }
@@ -139,6 +149,7 @@ body {
 
 #folder_list {
 	margin: 20px auto 10px auto;
-	min-width: 20em;
-	max-width: 30%;
+    min-width: 20em;
+    padding: 8px;
+    width: 420px;
 }
