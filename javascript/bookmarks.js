@@ -41,7 +41,7 @@ function isValidUrl(url) {
 function removeBookmark(bookmark) {
 	chrome.bookmarks.remove(bookmark.id, function() {
 		$("#" + bookmark.id).remove();
-		updateCustomIcon("", bookmark.url);
+		updateBackgroundColor( bookmark.url, true );  // passing true deletes it
 		alignVertical();
 	});
 }
@@ -71,7 +71,8 @@ function updateBookmark(id, title, url) {
 				"href": result.url
 			});
 		});
-		updateCustomIcon(url, old_url);
+		if (!url) url = 'folder#'+id;
+		updateBackgroundColor(url);
 	} else {
 		alert("Editing an existing Bookmark requires both a Title and a valid URL in Chrome\n\n" +
 		"For example, valid URL's start with: \n - http:// \n - https:// \n - ftp://");

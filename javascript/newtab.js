@@ -1,5 +1,5 @@
 function addNewEntryButton(entryArray) {
-	var newEntry = $('<div class="entry" id="new_entry" title="Add New"><div><span class="foundicon-plus"></span></div></div>');
+	var newEntry = $('<div class="entry" id="new_entry" title="Add New"><div>&#43;</div></div>');
 	newEntry.on("click", function() {
 		showBookmarkEntryForm("New Bookmark or Folder", "", "", "new_entry");
 	});
@@ -8,17 +8,20 @@ function addNewEntryButton(entryArray) {
 
 function addSpeedDialBookmark(bookmark, entryArray) {
 	var entry = $('<div id="' + bookmark.id + '" class="entry">' +
-					'<a class="bookmark" href="' + bookmark.url + '" title="' + bookmark.title + '">' +
-						'<div class="image"></div>' +
-						'<table class="details"><tbody><tr>' +
-							'<td class="edit" title="Edit"><span class="foundicon-edit"></span></td>' +
-							'<td class="title">' + bookmark.title + '</td>' +
-							'<td class="remove" title="Remove"><span class="foundicon-remove"></span></td></tr></tbody>' +
-						'</table>' +
-					'</a>' +
+				'<div class="title">' + bookmark.title + '</div>' +
+				'<div class="icon"> <img src="chrome://favicon/'+bookmark.url+'"/> </div>' +
+				'<div class="edit">&#9998;</div>' +
+				'<div class="remove">&#735;</div>' +
 				'</div>');
 
-	entry.find(".image").css("background-image", "url(" + getThumbnailUrl(bookmark) + ")");
+	entry.find(".title").on("click", function(event) {
+		event.preventDefault();
+		location.href = bookmark.url;
+	});
+	entry.find(".icon").on("click", function(event) {
+		event.preventDefault();
+		location.href = bookmark.url;
+	});
 	entry.find(".edit").on("click", function(event) {
 		event.preventDefault();
 		showBookmarkEntryForm("Edit Bookmark: " + bookmark.title, bookmark.title, bookmark.url, bookmark.id);
@@ -30,9 +33,9 @@ function addSpeedDialBookmark(bookmark, entryArray) {
 		}
 	});
 
-	// If custom icon URL has been set and exists, evaluates to true to center the custom icon
-	if (JSON.parse(localStorage.getItem("custom_icon_data"))[bookmark.url]) {
-		entry.find(".image").addClass("custom-icon");
+	$bg = JSON.parse(localStorage.getItem("custom_bg_data"))[bookmark.url];
+	if ($bg) {
+		entry.css("background", $bg);
 	}
 
 	entryArray.push(entry);
@@ -40,16 +43,20 @@ function addSpeedDialBookmark(bookmark, entryArray) {
 
 function addSpeedDialFolder(bookmark, entryArray) {
 	var entry = $('<div class="entry" id="' + bookmark.id + '">' +
-					'<a class="bookmark" href="newtab.html#' + bookmark.id + '" title="' + bookmark.title + '" >' +
-						'<div class="image"><span class="foundicon-folder"></span></div>' +
-						'<table class="details"><tbody><tr>' +
-							'<td class="edit" title="Edit"><span class="foundicon-edit"></span></td>' +
-							'<td class="title"><div>' + bookmark.title + '</div></td>' +
-							'<td class="remove" title="Remove"><span class="foundicon-remove"></span></td></tr></tbody>' +
-						'</table>' +
-					'</a>' +
+				'<div class="title">' + bookmark.title + '</div>' +
+				'<div class="icon">&#128447;</div>' +
+				'<div class="edit">&#9998;</div>' +
+				'<div class="remove">&#735;</div>' +
 				'</div>');
 
+	entry.find(".title").on("click", function(event) {
+		event.preventDefault();
+		location.href = 'newtab.html#' + bookmark.id;
+	});
+	entry.find(".icon").on("click", function(event) {
+		event.preventDefault();
+		location.href = 'newtab.html#' + bookmark.id;
+	});
 	entry.find(".edit").on("click", function(event) {
 		event.preventDefault();
 		showBookmarkEntryForm("Edit Folder: " + bookmark.title, bookmark.title, bookmark.url, bookmark.id);
@@ -60,6 +67,11 @@ function addSpeedDialFolder(bookmark, entryArray) {
 			removeFolder(bookmark.id);
 		}
 	});
+
+	$bg = JSON.parse(localStorage.getItem("custom_bg_data"))[('folder#'+bookmark.id)];
+	if ($bg) {
+		entry.css("background", $bg);
+	}
 
 	entryArray.push(entry);
 }
@@ -83,8 +95,7 @@ function setDialStyles() {
 	// Height values are 3/4 or * 0.75 width values
 	$("#styles").html(
 		"#dial { width:" + (adjustedDialWidth | 0) + "px; } " +
-		".entry { height:" + (entryWidth * 0.75 | 0) + "px; width:" + (entryWidth | 0) + "px; } " +
-		"td.title { max-width:" + (entryWidth - 50 | 0) + "px; } " +
+		".entry { width:" + (entryWidth | 0) + "px; } " +
 		".image { height:" + ((entryWidth * 0.75) - 20 | 0) + "px; } " +
 		".foundicon-folder { font-size:" + (entryWidth * 0.5 | 0) + "px; top:" + (entryWidth * 0.05 | 0) + "px; color:" + folderColor + " } " +
 		".foundicon-plus { font-size:" + (entryWidth * 0.3 | 0) + "px; top:" + (entryWidth * 0.18 | 0) + "px; } "
@@ -99,13 +110,17 @@ function createSpeedDial(folderId) {
 		// Loop over bookmarks in folder and add to the dial
 		var entryArray = [];
 		(node[0].children).forEach(function(bookmark) {
-			if (bookmark.url !== undefined) {
-				addSpeedDialBookmark(bookmark, entryArray);
-			}
 			if (bookmark.children !== undefined && localStorage.getItem("show_subfolder_icons") === "true") {
 				addSpeedDialFolder(bookmark, entryArray);
 			}
 		});
+		entryArray.push( $('<div style="background: #607D8B;height: 8px;margin: 12px 0;clear: both;">&nbsp;</div>') );
+		(node[0].children).forEach(function(bookmark) {
+			if (bookmark.url !== undefined) {
+				addSpeedDialBookmark(bookmark, entryArray);
+			}
+		});
+
 
 		// Adds the + button to the dom only if enabled
 		if (localStorage.getItem("show_new_entry") === "true") {
@@ -131,35 +146,25 @@ function createSpeedDial(folderId) {
 	});
 }
 
-function getThumbnailUrl(bookmark) {
-	if (JSON.parse(localStorage.getItem("custom_icon_data"))[bookmark.url]) {
-		return JSON.parse(localStorage.getItem("custom_icon_data"))[bookmark.url];
-	}
-	if (localStorage.getItem("force_http") === "true") {
-		bookmark.url = bookmark.url.replace("https", "http");
-	}
-	return localStorage.getItem("thumbnailing_service").replace("[URL]", bookmark.url);
-}
 
 function showBookmarkEntryForm(heading, title, url, target) {
 	var form = $("#bookmark_form");
-
 	form.find("h1").html(heading);
 	form.find(".title").prop("value", title);
 	// Must || "" .url and .icon fields when using .prop() to clear previously set input values
 	form.find(".url").prop("value", url || "");
-	form.find(".icon").prop("value", JSON.parse(localStorage.getItem("custom_icon_data"))[url] || "");
+	//form.find(".icon").prop("value", JSON.parse(localStorage.getItem("custom_icon_data"))[url] || "");
 	form.prop("target", target);
 
 	// Selectors to hide URL & custom icon fields when editing a folder name
 	if (form.find("h1").text().indexOf("Edit Folder") > -1) {
 		form.find("p").eq(1).hide();
-		form.find("p").eq(2).hide();
+		//form.find("p").eq(2).hide();
 	}
 	// Selectors to hide the cusom icon field when adding a new entry
-	if (form.find("h1").text().indexOf("New") > -1) {
-		form.find("p").eq(2).hide();
-	}
+	// if (form.find("h1").text().indexOf("New") > -1) {
+	// 	form.find("p").eq(2).hide();
+	// }
 
 	form.reveal();
 	form.find(".title").focus();
@@ -168,27 +173,44 @@ function showBookmarkEntryForm(heading, title, url, target) {
 	});
 }
 
-function updateCustomIcon(url, old_url) {
-	var icon_object = JSON.parse(localStorage.getItem("custom_icon_data"));
-	var icon_url = $("#bookmark_form .icon").prop("value").trim();
 
-	icon_object[url] = icon_url;
-
-	if (url !== old_url) {
-		delete icon_object[old_url];
-	} // Makes sure thumbnail URL changes along with the bookmark
-
-	if (icon_url.length === 0 || url.trim().length === 0) {
-		delete icon_object[url];
-		delete icon_object[old_url];
-	} // Cleans out any empty entries from localStorage
-
-	localStorage.setItem("custom_icon_data", JSON.stringify(icon_object));
+function updateBackgroundColor( url, deleteit ) {
+	var bg_object = JSON.parse(localStorage.getItem("custom_bg_data"));
+	if (deleteit) {
+		delete bg_object[url];
+	}
+	else {
+		var bg = $("#bookmark_form #background_color").prop("value");
+		bg_object[url] = bg;
+	}
+	localStorage.setItem("custom_bg_data", JSON.stringify(bg_object));
 	if (localStorage.getItem("enable_sync") === "true") {
 		syncToStorage();
 	}
 	createSpeedDial(getStartingFolder());
 }
+
+// function updateCustomIcon(url, old_url) {
+// 	var icon_object = JSON.parse(localStorage.getItem("custom_icon_data"));
+// 	var icon_url = $("#bookmark_form .icon").prop("value").trim();
+
+// 	icon_object[url] = icon_url;
+
+// 	if (url !== old_url) {
+// 		delete icon_object[old_url];
+// 	} // Makes sure thumbnail URL changes along with the bookmark
+
+// 	if (icon_url.length === 0 || url.trim().length === 0) {
+// 		delete icon_object[url];
+// 		delete icon_object[old_url];
+// 	} // Cleans out any empty entries from localStorage
+
+// 	localStorage.setItem("custom_icon_data", JSON.stringify(icon_object));
+// 	if (localStorage.getItem("enable_sync") === "true") {
+// 		syncToStorage();
+// 	}
+// 	createSpeedDial(getStartingFolder());
+// }
 
 function alignVertical() {
 	if (localStorage.getItem("center_vertically") === "true") {
